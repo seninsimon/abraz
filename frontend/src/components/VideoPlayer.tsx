@@ -16,8 +16,16 @@ export function VideoPlayer({ stream, label, muted = false, className = '' }: Vi
     const video = videoRef.current;
     if (!video) return;
 
+    // Programmatically enforce muted properties to satisfy autoplay policies
+    video.muted = muted;
+    video.defaultMuted = muted;
+
     if (stream) {
       video.srcObject = stream;
+      // Force play() in case autoplay didn't trigger automatically
+      video.play().catch((err) => {
+        console.warn('[VideoPlayer] Autoplay/play failed:', err);
+      });
     } else {
       video.srcObject = null;
     }
@@ -27,7 +35,7 @@ export function VideoPlayer({ stream, label, muted = false, className = '' }: Vi
         video.srcObject = null;
       }
     };
-  }, [stream]);
+  }, [stream, muted]);
 
   return (
     <div className={`video-player-container ${className}`}>

@@ -63,7 +63,7 @@ export function HostPage() {
           /* Connected — show streams side by side */
           <div className="host-video-grid">
             <div className="video-card host-video-card">
-              <VideoPlayer stream={remoteStreams.webcam} label="Webcam Feed" />
+              <VideoPlayer stream={remoteStreams.webcam} label="Webcam Feed" muted={true} />
               <div className="video-card-footer">
                 <span className="video-card-label">
                   <span className={`video-card-dot ${hasWebcam ? 'dot-active' : 'dot-inactive'}`} />
@@ -73,7 +73,7 @@ export function HostPage() {
             </div>
 
             <div className="video-card host-video-card">
-              <VideoPlayer stream={remoteStreams.screen} label="Screen Share" />
+              <VideoPlayer stream={remoteStreams.screen} label="Screen Share" muted={true} />
               <div className="video-card-footer">
                 <span className="video-card-label">
                   <span className={`video-card-dot ${hasScreen ? 'dot-active' : 'dot-inactive'}`} />
