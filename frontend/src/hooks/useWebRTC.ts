@@ -258,18 +258,24 @@ export function useWebRTC(
         const streamType = meta?.streamType ?? 'webcam';
 
         setRemoteStreams((prev) => {
-          // Create a new MediaStream for this stream type if needed,
-          // or add the track to the existing one
           const existing = prev[streamType];
           if (existing) {
             // Check if this track is already in the stream
             if (!existing.getTrackById(event.track.id)) {
               existing.addTrack(event.track);
             }
-            return { ...prev, [streamType]: existing };
+            // Return a new MediaStream instance containing all current tracks
+            // to ensure React detects the state update and triggers a re-render
+            return {
+              ...prev,
+              [streamType]: new MediaStream(existing.getTracks()),
+            };
           } else {
-            // Use the incoming stream directly
-            return { ...prev, [streamType]: event.streams[0] ?? new MediaStream([event.track]) };
+            // Use a new MediaStream instance to hold the incoming track
+            return {
+              ...prev,
+              [streamType]: new MediaStream([event.track]),
+            };
           }
         });
       };
