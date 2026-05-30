@@ -32,7 +32,8 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 
 registerSocketHandlers(io);
 
-// Start listening
+
+
 httpServer.listen(PORT, () => {
   console.log(`\n Signaling server running on http://localhost:${PORT}`);
   console.log(` Accepting connections from ${FRONTEND_URL}`);
