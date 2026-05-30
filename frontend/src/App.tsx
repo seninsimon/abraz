@@ -1,9 +1,4 @@
-/**
- * App root component.
- * 
- * Sets up React Router with routes for the Client and Host pages.
- * The root path redirects to the Client page.
- */
+
 
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { ClientPage } from './pages/ClientPage';

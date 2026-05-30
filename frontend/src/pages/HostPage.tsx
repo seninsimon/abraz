@@ -1,10 +1,4 @@
-/**
- * HostPage — the streaming receiver's dashboard.
- * 
- * Displays both the webcam and screen share streams from the client
- * side by side. Automatically receives streams when a client connects.
- * Shows a waiting animation when no client is connected.
- */
+
 
 import { useEffect } from 'react';
 import { useSocket } from '../hooks/useSocket';
@@ -16,7 +10,6 @@ export function HostPage() {
   const { socket, isConnected: isSocketConnected, connect: connectSocket } = useSocket();
   const { connectionState, remoteStreams } = useWebRTC(socket, 'host', isSocketConnected);
 
-  // Connect to signaling server as host on mount
   useEffect(() => {
     if (!isSocketConnected) {
       connectSocket('host');

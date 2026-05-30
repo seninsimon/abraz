@@ -1,13 +1,5 @@
-/**
- * ConnectionStatus component.
- * 
- * Displays the current WebRTC connection state with a color-coded
- * indicator dot and label. Animates when in the 'connecting' state.
- */
-
 import type { ConnectionStatusProps, ConnectionState } from '../types';
 
-/** Map connection states to display labels and CSS classes */
 const STATE_CONFIG: Record<ConnectionState, { label: string; colorClass: string }> = {
   new: { label: 'Ready', colorClass: 'status-neutral' },
   connecting: { label: 'Connecting…', colorClass: 'status-warning' },

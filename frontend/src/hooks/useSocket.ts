@@ -1,9 +1,4 @@
-/**
- * useSocket hook.
- * 
- * Manages Socket.IO connection lifecycle and exposes
- * connection state to React components.
- */
+
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
@@ -11,20 +6,13 @@ import { getSocket, connectSocket, disconnectSocket } from '../services/socketSe
 import type { UserRole } from '../types';
 
 interface UseSocketReturn {
-  /** The Socket.IO client instance */
   socket: Socket;
-  /** Whether the socket is currently connected */
   isConnected: boolean;
-  /** Connect to the signaling server and join a room */
   connect: (role: UserRole) => void;
-  /** Disconnect from the signaling server */
   disconnect: () => void;
 }
 
-/**
- * Hook that wraps the socket service for React lifecycle management.
- * Handles connect/disconnect events and cleans up on unmount.
- */
+
 export function useSocket(): UseSocketReturn {
   const socketRef = useRef<Socket>(getSocket());
   const [isConnected, setIsConnected] = useState(false);

@@ -1,15 +1,3 @@
-/**
- * useWebRTC hook.
- * 
- * Central hook managing the RTCPeerConnection lifecycle for both
- * client (sender) and host (receiver) roles.
- * 
- * Client mode: adds local tracks → creates offer → sends via Socket.IO
- * Host mode: listens for offer → creates answer → receives remote tracks
- * 
- * Track identification uses stream IDs passed as metadata through signaling
- * so the host can distinguish webcam from screen share streams.
- */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
@@ -31,27 +19,17 @@ import type {
 } from '../types';
 
 interface UseWebRTCReturn {
-  /** Current WebRTC connection state */
   connectionState: ConnectionState;
-  /** Remote streams received (host mode only) */
   remoteStreams: RemoteStreams;
-  /** Initiate WebRTC connection (client mode) */
   connect: (
     webcamStream: MediaStream,
     screenStream: MediaStream,
     audioStream: MediaStream | null
   ) => Promise<void>;
-  /** Close the peer connection */
   disconnect: () => void;
 }
 
-/**
- * Hook for managing WebRTC peer connections.
- * 
- * @param socket - The Socket.IO client instance for signaling
- * @param role - Whether this peer is a 'client' (sender) or 'host' (receiver)
- * @param isSocketConnected - Whether the socket is currently connected
- */
+
 export function useWebRTC(
   socket: Socket,
   role: UserRole,
@@ -64,15 +42,11 @@ export function useWebRTC(
     screen: null,
   });
 
-  // Store track metadata so the host can map incoming tracks to stream types
   const trackMetadataRef = useRef<TrackMetadata[]>([]);
-  // Buffer ICE candidates received before remote description is set
   const iceCandidateBufferRef = useRef<RTCIceCandidateInit[]>([]);
   const isNegotiatingRef = useRef(false);
 
-  /**
-   * Flush any buffered ICE candidates after remote description is set.
-   */
+
   const flushIceCandidates = useCallback(async () => {
     const pc = pcRef.current;
     if (!pc || !pc.remoteDescription) return;
@@ -89,11 +63,8 @@ export function useWebRTC(
     }
   }, []);
 
-  /**
-   * Set up a peer connection with common event handlers.
-   */
+
   const setupPeerConnection = useCallback((): RTCPeerConnection => {
-    // Close any existing connection
     if (pcRef.current) {
       closePeerConnection(pcRef.current);
     }
@@ -101,7 +72,6 @@ export function useWebRTC(
     const pc = createPeerConnection();
     pcRef.current = pc;
 
-    // Monitor connection state changes
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState as ConnectionState;
       console.log(`[WebRTC] Connection state: ${state}`);
@@ -110,7 +80,6 @@ export function useWebRTC(
 
     pc.oniceconnectionstatechange = () => {
       console.log(`[WebRTC] ICE connection state: ${pc.iceConnectionState}`);
-      // Map ICE states to our ConnectionState type for UI display
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
         setConnectionState('connected');
       } else if (pc.iceConnectionState === 'failed') {
@@ -120,7 +89,6 @@ export function useWebRTC(
       }
     };
 
-    // Send ICE candidates to the remote peer via signaling
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socket.emit('ice-candidate', {
@@ -133,13 +101,7 @@ export function useWebRTC(
     return pc;
   }, [socket]);
 
-  /**
-   * CLIENT MODE: Add local tracks and create an SDP offer.
-   * 
-   * @param webcamStream - The timestamp-stamped webcam MediaStream
-   * @param screenStream - The screen share MediaStream
-   * @param audioStream - Optional separate audio stream (webcam audio)
-   */
+
   const connect = useCallback(
     async (
       webcamStream: MediaStream,
@@ -157,7 +119,6 @@ export function useWebRTC(
       const pc = setupPeerConnection();
       const metadata: TrackMetadata[] = [];
 
-      // Add webcam video track (stamped canvas stream)
       webcamStream.getVideoTracks().forEach((track) => {
         pc.addTrack(track, webcamStream);
         metadata.push({
@@ -167,7 +128,6 @@ export function useWebRTC(
         });
       });
 
-      // Add audio from the original webcam stream
       if (audioStream) {
         audioStream.getAudioTracks().forEach((track) => {
           pc.addTrack(track, webcamStream);
@@ -192,7 +152,6 @@ export function useWebRTC(
       trackMetadataRef.current = metadata;
 
       try {
-        // Create and send the SDP offer with track metadata
         const offer = await createOffer(pc);
         socket.emit('offer', {
           sdp: offer,
@@ -208,9 +167,7 @@ export function useWebRTC(
     [role, socket, setupPeerConnection]
   );
 
-  /**
-   * Close the peer connection and reset state.
-   */
+
   const disconnect = useCallback(() => {
     if (pcRef.current) {
       closePeerConnection(pcRef.current);
@@ -222,15 +179,10 @@ export function useWebRTC(
     isNegotiatingRef.current = false;
   }, []);
 
-  /**
-   * HOST MODE: Listen for signaling events and handle incoming streams.
-   */
+
   useEffect(() => {
     if (!isSocketConnected) return;
 
-    /**
-     * Handle incoming SDP offer (host receives this from client).
-     */
     const handleOffer = async (payload: SignalPayload) => {
       if (role !== 'host') return;
 
@@ -238,13 +190,9 @@ export function useWebRTC(
       setConnectionState('connecting');
       isNegotiatingRef.current = true;
 
-      // Store the track metadata so we can identify streams in ontrack
       trackMetadataRef.current = payload.trackMetadata ?? [];
 
       const pc = setupPeerConnection();
-
-      // Set up ontrack handler BEFORE setting remote description
-      // This ensures we capture all tracks added during SDP processing
       pc.ontrack = (event: RTCTrackEvent) => {
         console.log(
           `[WebRTC] Received track: kind=${event.track.kind}, streamId=${event.streams[0]?.id}`
@@ -258,18 +206,21 @@ export function useWebRTC(
         const streamType = meta?.streamType ?? 'webcam';
 
         setRemoteStreams((prev) => {
-          // Create a new MediaStream for this stream type if needed,
-          // or add the track to the existing one
           const existing = prev[streamType];
           if (existing) {
-            // Check if this track is already in the stream
             if (!existing.getTrackById(event.track.id)) {
               existing.addTrack(event.track);
             }
-            return { ...prev, [streamType]: existing };
+            
+            return {
+              ...prev,
+              [streamType]: new MediaStream(existing.getTracks()),
+            };
           } else {
-            // Use the incoming stream directly
-            return { ...prev, [streamType]: event.streams[0] ?? new MediaStream([event.track]) };
+            return {
+              ...prev,
+              [streamType]: new MediaStream([event.track]),
+            };
           }
         });
       };
@@ -282,7 +233,6 @@ export function useWebRTC(
         });
         console.log('[WebRTC] Answer sent');
 
-        // Flush any ICE candidates that arrived before the answer
         await flushIceCandidates();
       } catch (err) {
         console.error('[WebRTC] Error creating answer:', err);
@@ -290,9 +240,6 @@ export function useWebRTC(
       }
     };
 
-    /**
-     * Handle incoming SDP answer (client receives this from host).
-     */
     const handleAnswer = async (payload: SignalPayload) => {
       if (role !== 'client') return;
 
@@ -308,10 +255,7 @@ export function useWebRTC(
       }
     };
 
-    /**
-     * Handle incoming ICE candidates from the remote peer.
-     * Buffer them if remote description hasn't been set yet.
-     */
+
     const handleIceCandidate = async (payload: IceCandidatePayload) => {
       const pc = pcRef.current;
       if (!pc) {
@@ -326,14 +270,11 @@ export function useWebRTC(
           console.error('[WebRTC] Error adding ICE candidate:', err);
         }
       } else {
-        // Buffer until remote description is set
         iceCandidateBufferRef.current.push(payload.candidate);
       }
     };
 
-    /**
-     * Handle peer disconnection — clean up streams.
-     */
+
     const handleUserDisconnected = () => {
       console.log('[WebRTC] Remote peer disconnected');
       disconnect();

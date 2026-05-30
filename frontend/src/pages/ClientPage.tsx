@@ -1,14 +1,4 @@
-/**
- * ClientPage — the streaming sender's interface.
- * 
- * Provides controls to:
- * 1. Start the webcam (with live timestamp overlay preview)
- * 2. Start screen sharing
- * 3. Connect to the host via WebRTC
- * 
- * State machine: idle → webcam-ready → screen-ready → connected
- * Buttons enable/disable based on current state to guide the user.
- */
+
 
 import { useState, useCallback } from 'react';
 import { useSocket } from '../hooks/useSocket';
@@ -29,19 +19,13 @@ export function ClientPage() {
     isSocketConnected
   );
 
-  // The stamped webcam stream (with timestamp burned in) from the canvas
   const [stampedStream, setStampedStream] = useState<MediaStream | null>(null);
 
-  /**
-   * Callback from TimestampCanvas when the stamped output stream is ready.
-   */
   const handleStampedStream = useCallback((stream: MediaStream) => {
     setStampedStream(stream);
   }, []);
 
-  /**
-   * Start webcam capture and connect to signaling server.
-   */
+
   const handleStartWebcam = async () => {
     await webcam.start();
     if (!isSocketConnected) {
@@ -49,28 +33,19 @@ export function ClientPage() {
     }
   };
 
-  /**
-   * Start screen sharing.
-   */
   const handleStartScreen = async () => {
     await screen.start();
   };
 
-  /**
-   * Initiate the WebRTC connection using stamped webcam + screen streams.
-   */
+
   const handleConnect = async () => {
     if (!stampedStream || !screen.stream) {
       console.warn('[Client] Cannot connect: streams not ready');
       return;
     }
-    // Pass the stamped stream (canvas output), screen stream, and original webcam audio
     await connectWebRTC(stampedStream, screen.stream, webcam.stream);
   };
 
-  /**
-   * Disconnect and clean up everything.
-   */
   const handleDisconnect = () => {
     disconnectWebRTC();
     webcam.stop();

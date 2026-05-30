@@ -1,17 +1,4 @@
-/**
- * TimestampCanvas component.
- * 
- * Takes a raw webcam MediaStream, draws each frame onto a hidden canvas,
- * overlays the current time in HH:MM:SS format, and outputs a new
- * MediaStream via captureStream(). This "stamped" stream is what gets
- * sent over WebRTC, so the host sees the timestamp burned into the video.
- * 
- * Implementation details:
- * - Uses requestAnimationFrame for smooth, vsync'd rendering
- * - Canvas dimensions match the source video track's settings
- * - Timestamp is rendered with a semi-transparent background for readability
- * - The output stream is created via canvas.captureStream(30) at 30fps
- */
+
 
 import { useEffect, useRef, useCallback } from 'react';
 import type { TimestampCanvasProps } from '../types';
@@ -27,10 +14,7 @@ export function TimestampCanvas({
   const animationFrameRef = useRef<number>(0);
   const stampedStreamRef = useRef<MediaStream | null>(null);
 
-  /**
-   * Core rendering loop: draws each video frame onto the canvas
-   * with a timestamp overlay, running at display refresh rate.
-   */
+
   const renderFrame = useCallback(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -42,7 +26,6 @@ export function TimestampCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Draw the current video frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // --- Timestamp overlay ---
@@ -76,13 +59,7 @@ export function TimestampCanvas({
     animationFrameRef.current = requestAnimationFrame(renderFrame);
   }, []);
 
-  /**
-   * Set up the canvas pipeline when the source stream changes:
-   * 1. Attach source to hidden video element
-   * 2. Size canvas to match video dimensions
-   * 3. Start render loop
-   * 4. Create output MediaStream via captureStream()
-   */
+
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -103,8 +80,6 @@ export function TimestampCanvas({
       // Create the stamped output stream from the canvas
       const stamped = canvas.captureStream(30);
 
-      // Preserve audio tracks from the original stream
-      // (captureStream only captures video from the canvas)
       sourceStream.getAudioTracks().forEach((audioTrack) => {
         stamped.addTrack(audioTrack);
       });
