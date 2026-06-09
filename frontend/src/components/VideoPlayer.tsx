@@ -1,9 +1,4 @@
-/**
- * VideoPlayer component.
- * 
- * Renders a video element that auto-attaches a MediaStream.
- * Includes a styled label overlay and empty-state placeholder.
- */
+
 
 import { useEffect, useRef } from 'react';
 import type { VideoPlayerProps } from '../types';

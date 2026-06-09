@@ -1,9 +1,4 @@
-/**
- * useSocket hook.
- * 
- * Manages Socket.IO connection lifecycle and exposes
- * connection state to React components.
- */
+
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
@@ -11,20 +6,12 @@ import { getSocket, connectSocket, disconnectSocket } from '../services/socketSe
 import type { UserRole } from '../types';
 
 interface UseSocketReturn {
-  /** The Socket.IO client instance */
   socket: Socket;
-  /** Whether the socket is currently connected */
   isConnected: boolean;
-  /** Connect to the signaling server and join a room */
-  connect: (role: UserRole) => void;
-  /** Disconnect from the signaling server */
+  connect: (role: UserRole, token?: string, clientName?: string) => void;
   disconnect: () => void;
 }
 
-/**
- * Hook that wraps the socket service for React lifecycle management.
- * Handles connect/disconnect events and cleans up on unmount.
- */
 export function useSocket(): UseSocketReturn {
   const socketRef = useRef<Socket>(getSocket());
   const [isConnected, setIsConnected] = useState(false);
@@ -63,17 +50,17 @@ export function useSocket(): UseSocketReturn {
     };
   }, []);
 
-  const connect = useCallback((role: UserRole) => {
+  const connect = useCallback((role: UserRole, token?: string, clientName?: string) => {
     connectSocket();
-    // Once connected, join the room with the specified role
     const socket = socketRef.current;
+    
     const handleJoin = () => {
-      socket.emit('join-room', { role });
+      socket.emit('join-room', { role, token, clientName });
       socket.off('connect', handleJoin);
     };
 
     if (socket.connected) {
-      socket.emit('join-room', { role });
+      socket.emit('join-room', { role, token, clientName });
     } else {
       socket.on('connect', handleJoin);
     }
@@ -90,3 +77,4 @@ export function useSocket(): UseSocketReturn {
     disconnect,
   };
 }
+
