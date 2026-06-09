@@ -69,3 +69,26 @@ export interface TimestampCanvasProps {
   onStampedStream: (stream: MediaStream) => void;
   className?: string;
 }
+
+export interface FlaggedEvent {
+  id: string;
+  clientId: string;
+  clientName: string;
+  screenshot: string; // base64 representation
+  label: string;
+  timestamp: number;
+}
+
+export interface ClientProfile {
+  id: string;
+  name: string;
+  role: UserRole;
+  isSimulated: boolean;
+  webcamActive: boolean;
+  screenActive: boolean;
+  fps: number;
+  resolution: string;
+  streamState: 'grid' | 'focus' | 'paused';
+  simulatedSeed: number;
+}
+

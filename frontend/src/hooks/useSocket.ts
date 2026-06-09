@@ -8,10 +8,9 @@ import type { UserRole } from '../types';
 interface UseSocketReturn {
   socket: Socket;
   isConnected: boolean;
-  connect: (role: UserRole) => void;
+  connect: (role: UserRole, token?: string, clientName?: string) => void;
   disconnect: () => void;
 }
-
 
 export function useSocket(): UseSocketReturn {
   const socketRef = useRef<Socket>(getSocket());
@@ -51,17 +50,17 @@ export function useSocket(): UseSocketReturn {
     };
   }, []);
 
-  const connect = useCallback((role: UserRole) => {
+  const connect = useCallback((role: UserRole, token?: string, clientName?: string) => {
     connectSocket();
-    // Once connected, join the room with the specified role
     const socket = socketRef.current;
+    
     const handleJoin = () => {
-      socket.emit('join-room', { role });
+      socket.emit('join-room', { role, token, clientName });
       socket.off('connect', handleJoin);
     };
 
     if (socket.connected) {
-      socket.emit('join-room', { role });
+      socket.emit('join-room', { role, token, clientName });
     } else {
       socket.on('connect', handleJoin);
     }
@@ -78,3 +77,4 @@ export function useSocket(): UseSocketReturn {
     disconnect,
   };
 }
+
